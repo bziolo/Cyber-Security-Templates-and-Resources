@@ -1,0 +1,94 @@
+Title of Box
+
+IP Address: <Address_Here>
+
+====================Questions=========================
+
+1.) Question #1
+2.) Question #2
+3.) Question #3
+
+======================What Do we Know==================
+
+1.) Crumb_1
+2.) Crumb_2
+3.) Crumb_3
+
+=======================Walk-Through====================
+
+Step 1: Visit IP Address In Browser With Burp Suite Running
+
+
+
+===================================================
+
+Step 2: Nmap IP Address
+
+-Default nmap
+nmap -nv -Pn -sC -sV -O -T4 -oA <IP_Address>
+
+================
+
+-Fast nmap
+
+
+================
+
+-Long nmap
+
+
+===================================================
+
+Step 3: See if there is a robot.txt file 
+
+
+
+
+===================================================
+
+Step 4: Gobuster or DirBuster
+
+
+
+
+===================================================
+
+Step 5: Review services on Nmap can you use automated scripts?
+
+Example: Enum4Linux
+Example: Hydra bruteforce if notice statements of weak passwords
+
+
+
+==================================================
+
+Step 6: Burp Suite
+
+-Map out site
+
+-Determine if there are any fields that could possibly be exploited
+
+==================================================
+
+Step 7: On Box
+
+-Do you have sudo? 
+
+```
+sudo -l
+```
+
+-What SUID/GUID is available?
+
+```
+find / -perm -u=s -type f 2>/dev/null
+```
+
+
+-What directories are available?
+
+-What files can you read?
+
+-Run autoscript Linpeas
+
+
